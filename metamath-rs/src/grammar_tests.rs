@@ -416,29 +416,25 @@ fn addr(db: &Database, label: &[u8]) -> StatementAddress {
 
 const J_BOUND: &str = "$( $j syntax 'setvar' 'class'; bound 'setvar'; $)";
 
-#[test]
-fn bound_constant_body_rejected() {
-    let body = "wmyvar $a setvar myvar $.";
-    let mut db = bound_db(J_BOUND, body);
-    db.grammar_pass();
-    let expected = addr(&db, b"wmyvar");
-    assert_eq!(
-        db.grammar_pass().diagnostics(),
-        vec![(expected, Diagnostic::GrammarBoundTypecodeAxiom)]
-    );
-}
+grammar_test!(
+    bound_constant_body_rejected,
+    b"$c setvar class myvar $.
+    $( $j syntax 'setvar' 'class'; bound 'setvar'; $)
+    wmyvar $a setvar myvar $.",
+    2,
+    2,
+    Diagnostic::GrammarBoundTypecodeAxiom
+);
 
-#[test]
-fn bound_variable_body_rejected_not_conversion() {
-    let body = "vx $f setvar x $. bad $a setvar x $.";
-    let mut db = bound_db(J_BOUND, body);
-    db.grammar_pass();
-    let expected = addr(&db, b"bad");
-    assert_eq!(
-        db.grammar_pass().diagnostics(),
-        vec![(expected, Diagnostic::GrammarBoundTypecodeAxiom)]
-    );
-}
+grammar_test!(
+    bound_variable_body_rejected_not_conversion,
+    b"$c setvar class $. $v x $.
+    $( $j syntax 'setvar' 'class'; bound 'setvar'; $)
+    vx $f setvar x $. bad $a setvar x $.",
+    2,
+    4,
+    Diagnostic::GrammarBoundTypecodeAxiom
+);
 
 #[test]
 fn bound_not_bypassed_by_primitive() {
